@@ -24,9 +24,15 @@ function NameForm(props) {
         e.preventDefault();
         const currentTime = new Date().toLocaleTimeString();
 
+        // Check if the worker has already checked out
         if (!props.checkOutData.some(entry => entry.name === checkOutData.name)) {
-            props.onCheckOut({ ...checkOutData, time: currentTime });
-            setCheckOutData({ name: "" });
+            // Check if the worker has checked in before allowing checkout
+            if (props.checkInData.some(entry => entry.name === checkOutData.name)) {
+                props.onCheckOut({ ...checkOutData, time: currentTime });
+                setCheckOutData({ name: "" });
+            } else {
+                alert(`${checkOutData.name} has not checked in yet.`);
+            }
         } else {
             alert(`${checkOutData.name} has already checked out.`);
         }
@@ -78,6 +84,9 @@ function ListofPeople(props) {
 function App() {
     const [checkInData, setCheckInData] = useState([]);
     const [checkOutData, setCheckOutData] = useState([]);
+    const [resetId, setResetId] = useState("");
+    const [password, setPassword] = useState("");
+    const resetPassword = "kavya"; // Password for resetting data
 
     useEffect(() => {
         // Load data from localStorage on component mount
@@ -101,8 +110,32 @@ function App() {
         setCheckOutData(prevCheckOuts => [...prevCheckOuts, newCheckOut]);
     }
 
+    function handleResetData() {
+        // Check if reset ID and password match
+        if (resetId === "123456" && password === resetPassword) {
+            // Reset data and clear localStorage
+            setCheckInData([]);
+            setCheckOutData([]);
+            localStorage.removeItem('checkInData');
+            localStorage.removeItem('checkOutData');
+            // Reset form fields
+            setResetId("");
+            setPassword("");
+        } else {
+            alert("Incorrect ID or password. Data reset failed.");
+        }
+    }
+
     return (
         <div className="App">
+            <div className="reset-section">
+                <h2>Data Reset</h2>
+                <form>
+                    <input type="text" placeholder="ID" value={resetId} onChange={(e) => setResetId(e.target.value)} required />
+                    <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <button type="button" onClick={handleResetData}>Reset Data</button>
+                </form>
+            </div>
             <NameForm onCheckIn={handleCheckIn} onCheckOut={handleCheckOut} checkInData={checkInData} checkOutData={checkOutData} />
             <ListofPeople checkInData={checkInData} checkOutData={checkOutData} />
         </div>
