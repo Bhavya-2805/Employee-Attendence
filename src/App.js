@@ -10,7 +10,7 @@ function NameForm(props) {
 
     function submitHandler(e) {
         e.preventDefault();
-        const currentTime = new Date().toLocaleTimeString();
+        const currentTime = new Date().toLocaleTimeString(); // Get the current system time
         props.onAdd({ ...formData, time: currentTime });
         setFormData({ name: "", time: "" });
     }
@@ -19,8 +19,8 @@ function NameForm(props) {
         <>
             <h1>Employee Attendance</h1>
             <form onSubmit={submitHandler}>
-                <input type="text" name="name" placeholder="Name" value={formData.name} onChange={changeHandle} />
-                <button>Add The Attendance</button>
+                <input type="text" name="name" placeholder="Name" value={formData.name} onChange={changeHandle} required />
+                <button type="submit" disabled={!formData.name}>Add The Attendance</button>
             </form>
         </>
     );
