@@ -15,14 +15,14 @@ function NameForm(props) {
 
     function handleCheckInSubmit(e) {
         e.preventDefault();
-        const currentTime = new Date().toLocaleTimeString();
+        const currentTime = new Date().toISOString(); // Store full timestamp
         props.onCheckIn({ ...checkInData, time: currentTime });
         setCheckInData({ name: "" });
     }
 
     function handleCheckOutSubmit(e) {
         e.preventDefault();
-        const currentTime = new Date().toLocaleTimeString();
+        const currentTime = new Date().toISOString(); // Store full timestamp
 
         // Check if the worker has already checked out
         if (!props.checkOutData.some(entry => entry.name === checkOutData.name)) {
@@ -37,6 +37,7 @@ function NameForm(props) {
             alert(`${checkOutData.name} has already checked out.`);
         }
     }
+
 
     return (
         <>
@@ -62,19 +63,39 @@ function ListofPeople(props) {
         return props.checkInData.find(entry => entry.name === workerName);
     }
 
+    function calculateDuration(checkInTime, checkOutTime) {
+        const checkIn = new Date(checkInTime);
+        const checkOut = new Date(checkOutTime);
+        const duration = (checkOut - checkIn) / 1000; // in seconds
+
+        // Calculate hours, minutes, and seconds
+        const hours = Math.floor(duration / 3600);
+        const minutes = Math.floor((duration % 3600) / 60);
+        const seconds = Math.floor(duration % 60);
+
+        return `${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+    }
+
     return (
         <div className="list-container">
             <div className="list-section">
                 <h2>Check In/Out Data</h2>
                 <ul>
-                    {props.checkOutData.map((worker, index) => (
-                        <li key={index}>
-                            <span>{worker.name} checked out at {worker.time}</span>
-                            {findCheckInEntry(worker.name) &&
-                                <span> (Checked in at {findCheckInEntry(worker.name).time})</span>
-                            }
-                        </li>
-                    ))}
+                    {props.checkOutData.map((worker, index) => {
+                        const checkInEntry = findCheckInEntry(worker.name);
+                        if (!checkInEntry) return null;
+
+                        const checkInTime = checkInEntry.time;
+                        const checkOutTime = worker.time;
+                        const duration = calculateDuration(checkInTime, checkOutTime);
+
+                        return (
+                            <li key={index}>
+                                <span>{worker.name} checked out at {new Date(checkOutTime).toLocaleTimeString()} (Duration: {duration})</span>
+                                <span> (Checked in at {new Date(checkInTime).toLocaleTimeString()})</span>
+                            </li>
+                        );
+                    })}
                 </ul>
             </div>
         </div>
@@ -126,6 +147,40 @@ function App() {
         }
     }
 
+    function handleDownloadData() {
+        const data = checkOutData.map(worker => {
+            const checkInEntry = checkInData.find(entry => entry.name === worker.name);
+            if (!checkInEntry) return null;
+
+            const checkInTime = checkInEntry.time;
+            const checkOutTime = worker.time;
+            const duration = calculateDuration(checkInTime, checkOutTime);
+
+            return `${worker.name} checked out at ${new Date(checkOutTime).toLocaleTimeString()} (Duration: ${duration}) (Checked in at ${new Date(checkInTime).toLocaleTimeString()})`;
+        }).filter(entry => entry !== null).join("\n");
+
+        const blob = new Blob([data], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'attendance_data.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function calculateDuration(checkInTime, checkOutTime) {
+        const checkIn = new Date(checkInTime);
+        const checkOut = new Date(checkOutTime);
+        const duration = (checkOut - checkIn) / 1000; // in seconds
+
+        // Calculate hours, minutes, and seconds
+        const hours = Math.floor(duration / 3600);
+        const minutes = Math.floor((duration % 3600) / 60);
+        const seconds = Math.floor(duration % 60);
+
+        return `${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+    }
+
     return (
         <div className="App">
             <div className="reset-section">
@@ -138,6 +193,7 @@ function App() {
             </div>
             <NameForm onCheckIn={handleCheckIn} onCheckOut={handleCheckOut} checkInData={checkInData} checkOutData={checkOutData} />
             <ListofPeople checkInData={checkInData} checkOutData={checkOutData} />
+            <button onClick={handleDownloadData}>Download Data</button>
         </div>
     );
 }
