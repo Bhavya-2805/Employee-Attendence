@@ -124,3 +124,29 @@ span {
   width: 100%;
   text-align: center;
 }
+
+.alert {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  width: 80%;
+  text-align: center;
+  color: white;
+  transition: opacity 0.5s ease-out;
+}
+
+.alert.checkin {
+  background-color: #4CAF50;
+}
+
+.alert.checkout {
+  background-color: #007BFF;
+}
+
+.alert.success {
+  background-color: #4CAF50;
+}
+
+.alert.hidden {
+  opacity: 0;
+}

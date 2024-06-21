@@ -4,6 +4,8 @@ import './App.css';
 function NameForm(props) {
     const [checkInData, setCheckInData] = useState({ name: "" });
     const [checkOutData, setCheckOutData] = useState({ name: "" });
+    const [alertMessage, setAlertMessage] = useState(null);
+    const [alertType, setAlertType] = useState(null);
 
     function handleCheckInChange(e) {
         setCheckInData({ ...checkInData, [e.target.name]: e.target.value });
@@ -18,6 +20,14 @@ function NameForm(props) {
         const currentTime = new Date().toISOString(); // Store full timestamp
         props.onCheckIn({ ...checkInData, time: currentTime });
         setCheckInData({ name: "" });
+
+        // Show success message and hide after 5 seconds
+        setAlertMessage(`${checkInData.name} checked in successfully.`);
+        setAlertType("checkin");
+        setTimeout(() => {
+            setAlertMessage(null);
+            setAlertType(null);
+        }, 5000);
     }
 
     function handleCheckOutSubmit(e) {
@@ -30,6 +40,14 @@ function NameForm(props) {
             if (props.checkInData.some(entry => entry.name === checkOutData.name)) {
                 props.onCheckOut({ ...checkOutData, time: currentTime });
                 setCheckOutData({ name: "" });
+
+                // Show success message and hide after 5 seconds
+                setAlertMessage(`${checkOutData.name} checked out successfully.`);
+                setAlertType("checkout");
+                setTimeout(() => {
+                    setAlertMessage(null);
+                    setAlertType(null);
+                }, 5000);
             } else {
                 alert(`${checkOutData.name} has not checked in yet.`);
             }
@@ -38,10 +56,10 @@ function NameForm(props) {
         }
     }
 
-
     return (
         <>
             <h1>Employee Attendance</h1>
+            {alertMessage && <div className={`alert ${alertType}`}>{alertMessage}</div>}
             <div className="form-section">
                 <form onSubmit={handleCheckInSubmit}>
                     <h2>Check In</h2>
