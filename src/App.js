@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import './App.css';
 
 function NameForm(props) {
@@ -166,22 +167,36 @@ function App() {
     }
 
     function handleDownloadData() {
-        const data = checkOutData.map(worker => {
+        // Prepare data for the Excel file
+        const data = checkOutData.map((worker, index) => {
             const checkInEntry = checkInData.find(entry => entry.name === worker.name);
             if (!checkInEntry) return null;
 
-            const checkInTime = checkInEntry.time;
-            const checkOutTime = worker.time;
-            const duration = calculateDuration(checkInTime, checkOutTime);
+            const checkInTime = new Date(checkInEntry.time).toLocaleString();
+            const checkOutTime = new Date(worker.time).toLocaleString();
+            const duration = calculateDuration(checkInEntry.time, worker.time);
 
-            return `${worker.name} checked out at ${new Date(checkOutTime).toLocaleTimeString()} (Duration: ${duration}) (Checked in at ${new Date(checkInTime).toLocaleTimeString()})`;
-        }).filter(entry => entry !== null).join("\n");
+            return {
+                "Serial Number": index + 1,
+                "Name": worker.name,
+                "Check In Time": checkInTime,
+                "Check Out Time": checkOutTime,
+                "Duration": duration,
+            };
+        }).filter(entry => entry !== null);
 
-        const blob = new Blob([data], { type: 'text/plain' });
+        // Create a worksheet and workbook
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
+
+        // Generate and trigger download
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'attendance_data.txt';
+        a.download = 'attendance_data.xlsx';
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -201,17 +216,20 @@ function App() {
 
     return (
         <div className="App">
+            <NameForm onCheckIn={handleCheckIn} onCheckOut={handleCheckOut} checkInData={checkInData}
+                      checkOutData={checkOutData}/>
+            <ListofPeople checkInData={checkInData} checkOutData={checkOutData}/>
+            <button onClick={handleDownloadData}>Download Data</button>
             <div className="reset-section">
                 <h2>Data Reset</h2>
                 <form>
-                    <input type="text" placeholder="ID" value={resetId} onChange={(e) => setResetId(e.target.value)} required />
-                    <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <input type="text" placeholder="ID" value={resetId} onChange={(e) => setResetId(e.target.value)}
+                           required/>
+                    <input type="password" placeholder="Password" value={password}
+                           onChange={(e) => setPassword(e.target.value)} required/>
                     <button type="button" onClick={handleResetData}>Reset Data</button>
                 </form>
             </div>
-            <NameForm onCheckIn={handleCheckIn} onCheckOut={handleCheckOut} checkInData={checkInData} checkOutData={checkOutData} />
-            <ListofPeople checkInData={checkInData} checkOutData={checkOutData} />
-            <button onClick={handleDownloadData}>Download Data</button>
         </div>
     );
 }
